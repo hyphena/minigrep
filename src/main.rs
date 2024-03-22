@@ -1,10 +1,12 @@
 use std::env;
 use std::fs;
 use std::process;
+use std::error::Error;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    // identifies and stores command line arguments in a new Config object
     let config = Config::build(&args).unwrap_or_else(|err| {
         println!("Problem parsing arguments: {err}");
         process::exit(1);
@@ -13,9 +15,20 @@ fn main() {
     println!("Searching for \'{}\'", config.query);
     println!("In file {}", config.file_path);
 
-    let contents = fs::read_to_string(config.file_path).expect("Could not read file");
+    // using if let as there is no need to unwrap returned non-error values
+    if let Err(e) = run(config) {
+        println!("Application error: {e}");
+        process::exit(1);
+    }
+}
+
+// using a dynamic boxed Error for flexibility in returned error types
+fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(config.file_path)?;
 
     println!("With text:\n{contents}");
+
+    Ok(())
 }
 
 struct Config {
